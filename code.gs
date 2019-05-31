@@ -1,15 +1,40 @@
+function onEdit(e) {
+  Logger.log(e.range.getA1Notation());
+  var dropDown = "DropDownOptions";
+  var rangeEdited = e.range; //.getA1Notation() gives String, ex. "A1"
+  var downSpreadSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(dropDown);
+  //var dataDDSS = downSpreadSheet.getRange(rangeEdited.a1Notation()).getValues();
+  Logger.log(downSpreadSheet);
+  Logger.log(downSpreadSheet.getRange(rangeEdited.getA1Notation()).getValues());
+  //ABOVE LINE PRINTS OUT [RONOY, SARKAR], NEED TO SEPARATE IT BY COMMA AND CHECK IF CELL EDITED IS EQUAL TO ONE OF THOSE (EITHER RONOY OR SARKAR)
+  //CHECK DROPDOWN EDITS TO CELL
+  //if (downSpreadSheet.getrangeEdited.getA1Notation().getValues() ==  
+  
+}
+  
+  
+ 
+
+
+function onInstall(){
+  createWriteSheet();
+}
 function onOpen() {
   SpreadsheetApp.getUi() // Or DocumentApp or SlidesApp or FormApp.
-      .createMenu('Link File')
-      .addItem('Show prompt', 'showPrompt')
-      .addToUi();
-   SpreadsheetApp.getUi() // the file picker
-      .createMenu('File Picker')
+      .createMenu('File Options')
+      .addItem('Show Prompt', 'showPrompt')
       .addItem('Show Picker', 'showPicker')
       .addToUi();
   SpreadsheetApp.getUi() // dropdown time
-      .createMenu('New Column')
-      .addItem('DROPDOWN FILLER', 'addDropDown')
+      .createMenu('Dropdown Menu Options')
+      .addItem('Dropdown Filler', 'addDropDown')
+      .addItem('Dropdown Clear', 'clearDropDown')
+      .addItem('Dropdown Editer', 'editDropDown')
+      .addItem('Dropdown Calendar', 'dropDownCalendar')
+      .addToUi();
+  SpreadsheetApp.getUi()
+      .createMenu('Column Options')
+      .addItem('Header Adder', 'addHeader')
       .addToUi();
 }
 function addColumns(){
@@ -20,7 +45,12 @@ function addColumns(){
   sheet.getActiveCell().setValue("Hello");
 
 }
-
+function createWriteSheet() {    
+  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var newSheet = activeSpreadsheet.insertSheet();
+  newSheet.setName("DropDown Options");   
+  newSheet.hideSheet();
+}
 function addHeader(){
   var tabLists = "lists";
   var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -66,11 +96,39 @@ function addHeader(){
  // }
   
 }
-function addDropDown(){
-  var tabLists = "lists";
-  var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+   
+function editDropDown(){
+
+   var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var DropDownDatabase=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DropDown Options')
   var ui = SpreadsheetApp.getUi();
   var activeCell = ss.getCurrentCell();
+  
+  var options = DropDownDatabase.getRange(2,activeCell.getColumn(),ss.getLastRow(),1).getValue();
+  var html = HtmlService.createHtmlOutputFromFile('DowndropTIme')
+  ui// Or DocumentApp or SlidesApp or FormApp.
+      .showModalDialog(html, 'My custom dialog');
+  }
+  
+function  gatherDropdownOptions(){
+Logger.log("yuh");
+var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var DropDownDatabase=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DropDown Options')
+  var activeCell = ss.getActiveCell();
+  var options = DropDownDatabase.getRange(activeCell.getRow(),activeCell.getColumn()).getValue().toString();
+  Logger.log(options);
+  return options;
+}
+  
+function Loggingtime(){
+Logger.log('object');
+}
+function addDropDown(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); //actual spreadsheet where all the info is stored
+  var DropDownDatabase=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DropDown Options')
+  var ui = SpreadsheetApp.getUi();
+  var activeCell = ss.getCurrentCell();
+  
   var result = ui.prompt(
       'New DropDown Menu',
     'Enter DropDown Menu Options: ',
@@ -93,7 +151,7 @@ function addDropDown(){
   var options = text.split(',');
  // if(activeCell.getColumn() == 1 && activeCell.getRow() > 1){
     
-   //activeCell.offset(0, 1).clearContent().clearDataValidations();
+   //
     
   //var makes = datass.getRange(1, 1, 1, datass.getLastColumn()).getValues();
     
@@ -102,13 +160,25 @@ function addDropDown(){
    // if(makeIndex != 0){
        //var validationRange = datass.getRange(3, makeIndex, datass.getLastRow());
   var validationRule = SpreadsheetApp.newDataValidation().requireValueInList(options,true).build();
-       activeCell.getColumn().setDataValidation(validationRule);
+  ss.getRange(2,activeCell.getColumn(),ss.getLastRow(),1).clearContent().clearDataValidations();
+  ss.getRange(2,activeCell.getColumn(),ss.getLastRow(),1).setDataValidation(validationRule);
+  Logger.log(text);
+  DropDownDatabase.getRange(2,activeCell.getColumn(),ss.getLastRow(),1).setValue(text); //why does this go the whole way down the dropdown
   
    //  }  
       
  // }
   
 }
+function clearDropDown(){ //NEEDS TO CLEAR COLUMN IN THE DROPDOWN OPTIONS SHEET AS WELL
+  var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var activeCell = ss.getCurrentCell();
+  ss.getRange(activeCell.getRow(),activeCell.getColumn(),ss.getLastRow(),1).clearContent().clearDataValidations();
+  DropDownDatabase.getRange(activeCell.getRow(),activeCell.getColumn(),ss.getLastRow(),1).clear();
+}
+
+
+
 function showPrompt() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   // Get Spreadsheet
@@ -189,8 +259,23 @@ function dropDownCalendar(){ //Double click to set a date from the drop down cal
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getActiveSheet();
   sheet.getActiveCell().setDataValidation(isDate); //Will flag an error if not formatted as a valid date
-  sheet.getActiveCell().setNumberFormat("MM/dd/yyyy"); // makes format m/dd/yyyy
+  formatCol_ToDateTime(); // makes format m/dd/yyyy H:mm:ss
 }
+function formatCol_ToDateTime() {
+  // First select columns of interest (B) and choose
+  // Data → Data Validation → Criteria = Date, is valid date.
+  // This script then: sets the format to be date and time for the range B2:B
+  // after a date is picked in those columns.
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  var sheet = ss.getActiveSheet();
+  var c = ss.getActiveCell();
+  sheet.getActiveRange().activate();
+  sheet.getActiveRangeList().setNumberFormat('M/d/yyyy H:mm:ss');
+}
+
+
+
 function getOAuthToken() {
   DriveApp.getRootFolder();
   return ScriptApp.getOAuthToken();

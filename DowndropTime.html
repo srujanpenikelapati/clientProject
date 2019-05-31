@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+  <div class="container">
+  <form action="action_page.php">
+
+    <label for="fname">First Name</label>
+    <input type="text" id="fname" name="firstname" value="pineapple">
+
+    <input type="submit" value="Submit">
+
+  </form>
+</div>
+  <script>
+function yuh(options){
+document.getElementById("fname").value=options;
+}
+google.script.run.withSuccessHandler(yuh)
+.gatherDropdownOptions()
+
+</script>
+  </body>
+</html>
+
+
